@@ -144,7 +144,7 @@ gui = GUI()
 game = ConnectFour()
 
 
-while 1:
+while True:  # Changed 1 to true for testing workflow 
 	move = gui.getPlayerMove(1, game.getBoard())
 	game.makeMove(move, 1)
 	print game.checkWinner()
