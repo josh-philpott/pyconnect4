@@ -1,6 +1,7 @@
 import pygame
 import sys
 import copy 
+import random
 
 global_computer = 2
 global_human = 1
@@ -40,11 +41,28 @@ class ConnectFourHelper:
                     max_score_index = len(moves)-1
                 if min(scores)==scores[len(moves)-1]:
                     min_score_index = len(moves)-1
+            else:
+                #if move is not valid, ensure it will not be selected
+                if player==global_computer:
+                    scores.append(-1000)
+                else:
+                    scores.append(1000)
         if depth==0:
             print scores
         
+    
         if player == global_computer:
-            return moves[max_score_index], scores[max_score_index]
+            #get moves that are "equivalent" to best move
+            best_score = scores[max_score_index]
+            best_moves = []
+            for i in range(len(scores)):
+                if scores[i]==best_score:
+                    best_moves.append(i)
+                    #target deeper play if bad outcome
+                    if(best_score<0):
+                        scores[i]=best_score + (maxDepth-depth)
+            
+            return random.choice(best_moves), scores[max_score_index]
         else:
             return moves[min_score_index], scores[min_score_index]
         
@@ -119,9 +137,9 @@ class ConnectFourHelper:
     
         
         if self.checkWinner(board)==player:
-            return 10
+            return 100
         elif self.checkWinner(board)==computer:
-            return -10
+            return -100
         else:
             return 0
         
