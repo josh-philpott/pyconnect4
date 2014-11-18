@@ -7,45 +7,45 @@ class ConnectFour:
 
     def __init__(self):
 	self.board = [[0,0,0,0,0,0,0],
-		          [0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0]]
-		
+	              [0,0,0,0,0,0,0],
+	              [0,0,0,0,0,0,0],
+	              [0,0,0,0,0,0,0],
+	              [0,0,0,0,0,0,0],
+	              [0,0,0,0,0,0,0]]
+
     def checkWinner(self):
 	"""Returns winner. Check for all possible winning combinations"""
-		
+
 	#Check for winner horizontal
 	for row in range (0,6):
 	    for start in range (0,4):
 		if self.board[row][start]!=0:
 		    if (self.board[row][start] == self.board[row][start+1] ==
-				self.board[row][start+2] == self.board[row][start+3]):
+		        self.board[row][start+2] == self.board[row][start+3]):
 			return self.board[row][start]
-					
+
 	#Check for winner diagn - bottom-left to top-right
 	for row in range (0,3):
 	    for start in range (0,4):
 		if self.board[row][start]!=0:
 		    if (self.board[row][start] == self.board[row+1][start+1] ==
-				self.board[row+2][start+2] == self.board[row+3][start+3]):
+		        self.board[row+2][start+2] == self.board[row+3][start+3]):
 			return self.board[row][start]
-					
+
 	#Check for winner diagn - top-left to bottom-right
 	for row in range (3,6):
 	    for start in range (0,4):
 		if self.board[row][start]!=0:
 		    if (self.board[row][start] == self.board[row-1][start+1] ==
-				self.board[row-2][start+2] == self.board[row-3][start+3]):
+		        self.board[row-2][start+2] == self.board[row-3][start+3]):
 			return self.board[row][start]
-					
+
 	#Check for winner vertical
 	for row in range (0,3):
 	    for start in range (0,7):
 		if self.board[row][start]!=0:
 		    if (self.board[row][start] == self.board[row+1][start] ==
-				self.board[row+2][start] == self.board[row+3][start]):
+		        self.board[row+2][start] == self.board[row+3][start]):
 			return self.board[row][start]		
 
 
@@ -102,13 +102,13 @@ class GUI:
 	    for j in range(0, 7):
 		if board[i][j]==0:
 		    self.screen.blit(self.grid_tile,((j+1)*self.margin_left,
-					                         (i+1)*self.margin_top))
+		                                     (i+1)*self.margin_top))
 		elif board[i][j]==1:
 		    self.screen.blit(self.red_token,((j+1)*self.margin_left,
-					                         (i+1)*self.margin_top))
+		                                     (i+1)*self.margin_top))
 		elif board[i][j]==2:
 		    self.screen.blit(self.black_token,((j+1)*self.margin_left,
-					                           (i+1)*self.margin_top))
+		                                       (i+1)*self.margin_top))
 
 	for row in range(100, 800, 100):
 	    for column in range(100, 700, 100):
@@ -121,7 +121,7 @@ class GUI:
 		self.screen.blit(self.red_token, ((((i+1)*100)), 0))
 	    if move[i]==2:
 		self.screen.blit(self.black_token, ((((i+1)*100)), 0))
-    
+
     def getPlayerMove(self,player,board):
 	"""Returns index of player move selection"""
 
@@ -154,4 +154,3 @@ while True:
     move = gui.getPlayerMove(2, game.getBoard())
     game.makeMove(move, 2)
     print game.checkWinner()
-

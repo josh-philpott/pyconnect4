@@ -10,7 +10,4 @@ proj.directory-list = [{'dirloc': loc('.'),
                         'include_hidden': False,
                         'recursive': True,
                         'watch_for_changes': True}]
-proj.file-list = [loc('../connect_ai.py'),
-                  loc('../connect_game.py'),
-                  loc('../connect_vision.py')]
 proj.file-type = 'shared'
