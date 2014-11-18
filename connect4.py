@@ -13,6 +13,19 @@ class ConnectFourHelper:
         pass
 
     def minimax(self, board, player, depth, maxDepth=100):
+        """ recursive minimax algorithm returns best move for player
+        from given board state. 
+        
+        Keyword arguments:
+        board  -- 6x7 2D list representing board state
+        player -- player to determine optimal move for
+        depth  -- current search depth
+        maxDepth -- maxDepth to explore to
+        
+        if there are multiple equivalent "best moves",
+        will return a random element from a set of best moves
+        """
+        #if game is over or depth is maxed out, return current board score
         if self.isGameOver(board):
             return 0, self.getScore(board,global_computer)
         if depth==maxDepth:
@@ -29,11 +42,10 @@ class ConnectFourHelper:
             opponent=1
         
         #Populate score array by doing each potential move
-        #A potential move is guaranteed since isgameOver check has passed
         for i in range(0,7):
             potential_board = copy.deepcopy(board)
+            #if move is valid, run minimax on substates
             if self.isMoveValid(potential_board,i):
-                #print i, depth
                 self.dropPiece(i,player,potential_board)
                 scores.append(self.minimax(potential_board, opponent,depth+1, maxDepth)[1])
                 moves.append(i)
@@ -41,18 +53,20 @@ class ConnectFourHelper:
                     max_score_index = len(moves)-1
                 if min(scores)==scores[len(moves)-1]:
                     min_score_index = len(moves)-1
+            #if move is not valid, ensure it will not be selected
+            #by setting the score to number that won't be chosen
             else:
-                #if move is not valid, ensure it will not be selected
                 if player==global_computer:
                     scores.append(-1000)
                 else:
                     scores.append(1000)
+                
         if depth==0:
             print scores
         
-    
+        #get moves that are "equivalent" to best move
+        #and return 
         if player == global_computer:
-            #get moves that are "equivalent" to best move
             best_score = scores[max_score_index]
             best_moves = []
             for i in range(len(scores)):
@@ -68,6 +82,16 @@ class ConnectFourHelper:
         
 
     def isMoveValid(self, board, col=None):
+        """Determines if a move is valid
+        
+        if col is set to integer,
+        Returns True if col is valid move, False if invalid
+        
+        if col is set to None,
+        Returns True if board is not full, False if it is full
+        """
+        
+        
         if col==None:
             for i in range(0,7):
                 if board[0][i]==0:
@@ -161,6 +185,9 @@ class ConnectFourHelper:
 
 
 class ConnectFourGame:
+    """Class responsible for handling an instance of a connect four game
+    Requires helper class ConnectFourHelper
+    """
 
     helper = ConnectFourHelper()
 
@@ -183,7 +210,7 @@ class ConnectFourGame:
 
 
     def dropPiece(self, col, player):
-        """ Make move on current board. Returns 0 if move invalid """
+        """ Applys move to game board. Returns 1 if valid, 0 if invalid """
 
         isMoveValid = self.helper.isMoveValid(self.board, col)
 
@@ -194,60 +221,20 @@ class ConnectFourGame:
             return 0
 
     def getBoard(self):
+        """Returns list representing game board"""
         return self.board
 
     def getWinner(self):
+        """Returns winner if one exists. Otherwise, returns 0"""
         return self.helper.checkWinner(self.board)
 
     def makeComputerMove(self):
+        """Simulates computer move using minimax algorithm"""
         move, score = self.helper.minimax(self.board, global_computer, 0, maxDepth=2)
         
         print "Moving to",move,"with a score of",score
         self.dropPiece(move, global_computer)
-        #moves = self.helper.getPotentialMoves(self.board, self.computer, 4)
-        #print moves
-
-        ##first check for winning move
-        #for i in range(0,7):
-            #if moves[i]==1:
-                #self.dropPiece(i, self.computer)
-                #return
-
-        #for i in range(0,7):
-            #if moves[i]==0 and self.helper.isMoveValid(self.board, i):
-                #self.dropPiece(i, self.computer)
-                #return
-
-        #for i in range(0,7):
-            #if self.helper.isMoveValid(self.board, i):
-                #self.dropPiece(i, self.computer)
-                #return
-
-        #return -1
-
-
-
-
-
-        ##check if all moves are 0
-        #all_zero = True
-        #none_valid = True
-        #valid = []
-        #for i in range(0,7):
-            #valid.append(self.helper.isMoveValid(self.board,i))
-            #if valid[i]==1:
-                #none_valid=False
-            #if moves[i]!=0:
-                #all_zero = False
-
-        #if all_zero == True:
-            ##pick random move, make sure it's valid, and drop piece
-            #random.randint(0, 6)
-
-
-
-
-
+        
 class GUI:
     def __init__(self):
         pygame.init()
