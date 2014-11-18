@@ -2,79 +2,139 @@ import pygame
 import sys
 import copy 
 
-class ConnectFour:
-    """ConnectFour class handles all game logic"""
+class ConnectFourHelper:
+    """ConnectFourHelper contains helper functions for ConnectFourGame """
 
     def __init__(self):
-	self.board = [[0,0,0,0,0,0,0],
-	              [0,0,0,0,0,0,0],
-	              [0,0,0,0,0,0,0],
-	              [0,0,0,0,0,0,0],
-	              [0,0,0,0,0,0,0],
-	              [0,0,0,0,0,0,0]]
+	pass
 
-    def checkWinner(self):
+    def alphaBeta(self, player, depth, board, alpha, beta):
+	#score= -1
+	#best = -1
+	
+	#boards = self.getPossibleBoards(player)
+	
+	#Check for winner
+	if self.checkWinner==player:
+	    return sys.maxint-depth
+	elif self.checkWinner!=None:
+	    return -(sys.maxint - depth)
+	elif self.isMovePossible(board)==False:
+	    return 0
+	elif (depth==0):
+	    #return current state heuristic
+	    pass
+	else:
+	    best = -sys.maxint
+	    max_alpha = alpha
+	    #for each possible drop
+	    for i in range(0,7):
+		self.isMovePossible(board, i)		
+		    
+    def isMovePossible(self, board, col=None):
+	if col==None:
+	    for i in range(0,7):
+		if board[0][i]==0:
+		    return True
+	    return False
+	else:
+	    if board[0][col]==0:
+		return True
+	    return False    
+	    
+	    
+
+    def checkWinner(self, board):
 	"""Returns winner. Check for all possible winning combinations"""
 
 	#Check for winner horizontal
 	for row in range (0,6):
 	    for start in range (0,4):
-		if self.board[row][start]!=0:
-		    if (self.board[row][start] == self.board[row][start+1] ==
-		        self.board[row][start+2] == self.board[row][start+3]):
-			return self.board[row][start]
+		if board[row][start]!=0:
+		    if (board[row][start] == board[row][start+1] ==
+		        board[row][start+2] == board[row][start+3]):
+			return board[row][start]
 
 	#Check for winner diagn - bottom-left to top-right
 	for row in range (0,3):
 	    for start in range (0,4):
-		if self.board[row][start]!=0:
-		    if (self.board[row][start] == self.board[row+1][start+1] ==
-		        self.board[row+2][start+2] == self.board[row+3][start+3]):
-			return self.board[row][start]
+		if board[row][start]!=0:
+		    if (board[row][start] == board[row+1][start+1] ==
+		        board[row+2][start+2] == board[row+3][start+3]):
+			return board[row][start]
 
 	#Check for winner diagn - top-left to bottom-right
 	for row in range (3,6):
 	    for start in range (0,4):
-		if self.board[row][start]!=0:
-		    if (self.board[row][start] == self.board[row-1][start+1] ==
-		        self.board[row-2][start+2] == self.board[row-3][start+3]):
-			return self.board[row][start]
+		if board[row][start]!=0:
+		    if (board[row][start] == board[row-1][start+1] ==
+		        board[row-2][start+2] == board[row-3][start+3]):
+			return board[row][start]
 
 	#Check for winner vertical
 	for row in range (0,3):
 	    for start in range (0,7):
-		if self.board[row][start]!=0:
-		    if (self.board[row][start] == self.board[row+1][start] ==
-		        self.board[row+2][start] == self.board[row+3][start]):
-			return self.board[row][start]		
+		if board[row][start]!=0:
+		    if (board[row][start] == board[row+1][start] ==
+		        board[row+2][start] == board[row+3][start]):
+			return board[row][start]		
 
-
-    def getBoard(self):
-	"""Returns curent board state"""
-	return self.board
-
-    def getPossibleBoards(self, player):
+    def getPossibleBoards(self, player, board):
 	"""Returns list of possible boards"""
 	board_states = []
 
 	for col in range(0,7):
 	    for row in range(5,-1,-1):
 		temp_board = []
-		if self.board[row][col]==0:
-		    temp_board = copy.deepcopy(self.board)
+		if board[row][col]==0:
+		    temp_board = copy.deepcopy(board)
 		    temp_board[row][col]=player
 		    board_states.append(temp_board)
 		    break
 	return board_states
+    
+    def dropPiece(self, col, player, board):
+	    """ Make move on current board. Returns -1 if move invalid """
+	
+	    for i in range(5,-1,-1):
+		if board[i][col]==0:
+		    board[i][col]=player
+		    return board
+	    return None  
+    
 
-    def makeMove(self, move, player):
-	""" Make move on current board. Returns -1 if move invalid """
+    
+class ConnectFourGame:
+    
+    helper = ConnectFourHelper()
+    
+    def __init__(self):
+	self.board = [[0,0,0,0,0,0,0],
+	            [0,0,0,0,0,0,0],
+	            [0,0,0,0,0,0,0],
+	            [0,0,0,0,0,0,0],
+	            [0,0,0,0,0,0,0],
+	            [0,0,0,0,0,0,0]]    
+	
+    def dropPiece(self, col, player):
+	""" Make move on current board. Returns 0 if move invalid """
+	
+	isMovePossible = self.helper.isMovePossible(self.board, col)
+	
+	if isMovePossible:
+	    self.board = self.helper.dropPiece(col, player, self.board)
+	    return 1
+	else:
+	    return 0
+	
+    def getBoard(self):
+	return self.board
+    
+    def getWinner(self):
+	return self.helper.checkWinner(self.board)
 
-	for i in range(5,-1,-1):
-	    if self.board[i][move]==0:
-		self.board[i][move]=player
-		return 0
-	return -1
+
+    
 
 class GUI:
     def __init__(self):
@@ -145,12 +205,19 @@ class GUI:
 	    pygame.display.update()
 
 gui = GUI()
-game = ConnectFour()
+game = ConnectFourGame()
 
 while True:  
-    move = gui.getPlayerMove(1, game.getBoard())
-    game.makeMove(move, 1)
-    print game.checkWinner()
-    move = gui.getPlayerMove(2, game.getBoard())
-    game.makeMove(move, 2)
-    print game.checkWinner()
+    while True:
+	move = gui.getPlayerMove(1, game.getBoard())
+	if game.dropPiece(move,1)==1:
+	    break
+	  
+    print game.getWinner()
+        
+    while True:
+	move = gui.getPlayerMove(2, game.getBoard())
+	if game.dropPiece(move,2)==1:
+	    break
+	
+    print game.getWinner()
