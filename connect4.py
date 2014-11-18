@@ -66,50 +66,6 @@ class ConnectFourHelper:
         else:
             return moves[min_score_index], scores[min_score_index]
         
-    #def getPotentialMoves(self, board, tile, lookAhead):
-        #"""Get Potential Moves currently implemented on Baxter"""
-                
-        #if lookAhead == 0 or not self.isMoveValid(board):
-            #return [0] * 7
-    
-        
-
-        #if tile == 2:
-            #enemyTile = 1
-        #else:
-            #enemyTile = 2
-
-        ## Figure out the best move to make.
-        #potentialMoves = [0] * 7
-        #for firstMove in range(7):
-            #dupeBoard = copy.deepcopy(board)
-            #if not self.isMoveValid(dupeBoard, firstMove):
-                #continue
-            #self.dropPiece(firstMove, tile, dupeBoard)
-            #if self.checkWinner(dupeBoard)==tile:
-                ## a winning move automatically gets a perfect fitness
-                #potentialMoves[firstMove] = 1
-                #break  # don't bother calculating other moves
-            #else:
-                ## do other player's counter moves and determine best one
-                #if not self.isMoveValid(dupeBoard):
-                    #potentialMoves[firstMove] = 0
-                #else:
-                    #for counterMove in range(7):
-                        #dupeBoard2 = copy.deepcopy(dupeBoard)
-                        #if not self.isMoveValid(dupeBoard2, counterMove):
-                            #continue
-                        #self.dropPiece(counterMove, enemyTile, dupeBoard2)
-                        #if self.checkWinner(dupeBoard)==enemyTile:
-                            ## a losing move automatically gets the worst fit
-                            #potentialMoves[firstMove] = -1
-                            #break
-                        #else:
-                            ## do the recursive call to self.getPotentialMoves()
-                            #results = self.getPotentialMoves(dupeBoard2, tile,
-                                                             #lookAhead - 1)
-                            #potentialMoves[firstMove] += (sum(results) / 7) / 7
-        #return potentialMoves    
 
     def isMoveValid(self, board, col=None):
         if col==None:
@@ -244,7 +200,7 @@ class ConnectFourGame:
         return self.helper.checkWinner(self.board)
 
     def makeComputerMove(self):
-        move, score = self.helper.minimax(self.board, global_computer, 0, maxDepth=4)
+        move, score = self.helper.minimax(self.board, global_computer, 0, maxDepth=2)
         
         print "Moving to",move,"with a score of",score
         self.dropPiece(move, global_computer)
@@ -301,6 +257,8 @@ class GUI:
         self.margin_top  = 100
         self.margin_left = 100
         self.screen = pygame.display.set_mode(self.size)
+        
+        pygame.display.set_caption("Connect Four")
 
         #Images
         self.black_token = pygame.image.load("images/black.png")
@@ -337,6 +295,12 @@ class GUI:
                 self.screen.blit(self.red_token, ((((i+1)*100)), 0))
             if move[i]==2:
                 self.screen.blit(self.black_token, ((((i+1)*100)), 0))
+    def drawGame(self, board, player_move, optional=0):
+        self.clearScreen()
+        self.drawTokens(player_move)
+        self.drawBoard(board) 
+        pygame.display.update()        
+        
 
     def getPlayerMove(self,player,board):
         """Returns index of player move selection"""
@@ -354,11 +318,8 @@ class GUI:
                         player_move.insert(0, player_move.pop())
                     elif event.key==pygame.K_RETURN:
                         return player_move.index(player)
-
-            self.clearScreen()
-            self.drawTokens(player_move)
-            self.drawBoard(board) 
-            pygame.display.update()
+            self.drawGame(board,player_move,1)
+            
 
 
 
@@ -373,14 +334,31 @@ while True:
             move = gui.getPlayerMove(1, game.getBoard())
             if game.dropPiece(move,1)==1:
                 break
+        gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
+        if game.getWinner():
+            break
         game.makeComputerMove()
+        gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
+        if game.getWinner():
+            break        
 
     else:
         game.makeComputerMove()
+        gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
+        if game.getWinner():
+                    break         
         while True:
             move = gui.getPlayerMove(2, game.getBoard())
             if game.dropPiece(move,2)==1:
-                break	
+                break
+        gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
+        if game.getWinner():
+                    break     
+if game.getWinner():          
+    print "Player",game.getWinner(),"won!"
+    input("Press enter to continue...")
+    
+    
 
 
 
