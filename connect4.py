@@ -8,30 +8,71 @@ class ConnectFourHelper:
     def __init__(self):
 	pass
 
-    def alphaBeta(self, player, depth, board, alpha, beta):
-	#score= -1
-	#best = -1
+    #def alphaBeta(self, player, depth, board, alpha, beta):
+	##score= -1
+	##best = -1
 	
-	#boards = self.getPossibleBoards(player)
+	##boards = self.getPossibleBoards(player)
 	
-	#Check for winner
-	if self.checkWinner==player:
-	    return sys.maxint-depth
-	elif self.checkWinner!=None:
-	    return -(sys.maxint - depth)
-	elif self.isMovePossible(board)==False:
-	    return 0
-	elif (depth==0):
-	    #return current state heuristic
-	    pass
+	##Check for winner
+	#if self.checkWinner==player:
+	    #return sys.maxint-depth
+	#elif self.checkWinner!=None:
+	    #return -(sys.maxint - depth)
+	#elif self.isMoveValid(board)==False:
+	    #return 0
+	#elif (depth==0):
+	    ##return current state heuristic
+	    #pass
+	#else:
+	    #best = -sys.maxint
+	    #max_alpha = alpha
+	    ##for each possible drop
+	    #for i in range(0,7):
+		#self.isMoveValid(board, i)	
+    def getPotentialMoves(self, board, tile, lookAhead):
+	"""Get Potential Moves currently implemented on Baxter"""
+	if lookAhead == 0 or not self.isMoveValid(board):
+	    return [0] * 7
+    
+	if tile == 2:
+	    enemyTile = 1
 	else:
-	    best = -sys.maxint
-	    max_alpha = alpha
-	    #for each possible drop
-	    for i in range(0,7):
-		self.isMovePossible(board, i)		
+	    enemyTile = 2
+    
+	# Figure out the best move to make.
+	potentialMoves = [0] * 7
+	for firstMove in range(7):
+	    dupeBoard = copy.deepcopy(board)
+	    if not self.isMoveValid(dupeBoard, firstMove):
+		continue
+	    self.dropPiece(firstMove, tile, dupeBoard)
+	    if self.checkWinner(dupeBoard)==tile:
+		# a winning move automatically gets a perfect fitness
+		potentialMoves[firstMove] = 1
+		break  # don't bother calculating other moves
+	    else:
+		# do other player's counter moves and determine best one
+		if not self.isMoveValid(dupeBoard):
+		    potentialMoves[firstMove] = 0
+		else:
+		    for counterMove in range(7):
+			dupeBoard2 = copy.deepcopy(dupeBoard)
+			if not self.isMoveValid(dupeBoard2, counterMove):
+			    continue
+			self.dropPiece(counterMove, enemyTile, dupeBoard2)
+			if self.checkWinner(dupeBoard)==enemyTile:
+			    # a losing move automatically gets the worst fit
+			    potentialMoves[firstMove] = -1
+			    break
+			else:
+			    # do the recursive call to self.getPotentialMoves()
+			    results = self.getPotentialMoves(dupeBoard2, tile,
+			                                     lookAhead - 1)
+			    potentialMoves[firstMove] += (sum(results) / 7) / 7
+	return potentialMoves    
 		    
-    def isMovePossible(self, board, col=None):
+    def isMoveValid(self, board, col=None):
 	if col==None:
 	    for i in range(0,7):
 		if board[0][i]==0:
@@ -94,13 +135,13 @@ class ConnectFourHelper:
 	return board_states
     
     def dropPiece(self, col, player, board):
-	    """ Make move on current board. Returns -1 if move invalid """
+	    """ Make move on current board. """
 	
 	    for i in range(5,-1,-1):
 		if board[i][col]==0:
 		    board[i][col]=player
-		    return board
-	    return None  
+		    return
+	    return
     
 
     
@@ -108,21 +149,31 @@ class ConnectFourGame:
     
     helper = ConnectFourHelper()
     
-    def __init__(self):
+    def __init__(self, player=1):
 	self.board = [[0,0,0,0,0,0,0],
 	            [0,0,0,0,0,0,0],
 	            [0,0,0,0,0,0,0],
 	            [0,0,0,0,0,0,0],
 	            [0,0,0,0,0,0,0],
-	            [0,0,0,0,0,0,0]]    
+	            [0,0,0,0,0,0,0]] 
+	if player>2 or player < 1:
+	    self.player = 1
+	else:
+	    self.player = player
+	    
+	if self.player==1:
+	    self.computer=2
+	else:
+	    self.computer=1
+	
 	
     def dropPiece(self, col, player):
 	""" Make move on current board. Returns 0 if move invalid """
 	
-	isMovePossible = self.helper.isMovePossible(self.board, col)
+	isMoveValid = self.helper.isMoveValid(self.board, col)
 	
-	if isMovePossible:
-	    self.board = self.helper.dropPiece(col, player, self.board)
+	if isMoveValid:
+	    self.helper.dropPiece(col, player, self.board)
 	    return 1
 	else:
 	    return 0
@@ -132,6 +183,48 @@ class ConnectFourGame:
     
     def getWinner(self):
 	return self.helper.checkWinner(self.board)
+    
+    def makeComputerMove(self):
+	
+	moves = self.helper.getPotentialMoves(self.board, self.computer, 3)
+	
+	#first check for winning move
+	for i in range(0,7):
+	    if moves[i]==1:
+		self.dropPiece(i, self.computer)
+		return
+	
+	for i in range(0,7):
+	    if moves[i]==0 and self.helper.isMoveValid(self.board, i):
+		self.dropPiece(i, self.computer)
+		return
+	
+	for i in range(0,7):
+	    if self.helper.isMoveValid(self.board, i):
+		self.dropPiece(i, self.computer)
+		return
+	    
+	return -1
+		
+	    
+	
+	
+	    
+	##check if all moves are 0
+	#all_zero = True
+	#none_valid = True
+	#valid = []
+	#for i in range(0,7):
+	    #valid.append(self.helper.isMoveValid(self.board,i))
+	    #if valid[i]==1:
+		#none_valid=False
+	    #if moves[i]!=0:
+		#all_zero = False
+	
+	#if all_zero == True:
+	    ##pick random move, make sure it's valid, and drop piece
+	    #random.randint(0, 6)
+	
 
 
     
@@ -204,20 +297,34 @@ class GUI:
 	    self.drawBoard(board) 
 	    pygame.display.update()
 
+player = 1
 gui = GUI()
-game = ConnectFourGame()
+game = ConnectFourGame(player)
 
-while True:  
-    while True:
-	move = gui.getPlayerMove(1, game.getBoard())
-	if game.dropPiece(move,1)==1:
-	    break
-	  
-    print game.getWinner()
-        
-    while True:
-	move = gui.getPlayerMove(2, game.getBoard())
-	if game.dropPiece(move,2)==1:
-	    break
+while True: 
+    if player==1:
+	#get player move first
+	while True:
+	    move = gui.getPlayerMove(1, game.getBoard())
+	    if game.dropPiece(move,1)==1:
+		break
+	game.makeComputerMove()
 	
-    print game.getWinner()
+    else:
+	game.makeComputerMove()
+	while True:
+	    move = gui.getPlayerMove(2, game.getBoard())
+	    if game.dropPiece(move,2)==1:
+		break	
+	
+	
+	  
+    #print game.getWinner()
+        
+    #while True:
+	#move = gui.getPlayerMove(2, game.getBoard())
+	#if game.dropPiece(move,2)==1:
+	    #break
+	
+    #helper2 = ConnectFourHelper()
+    #print helper2.getPotentialMoves(game.getBoard(), 1, 2)
