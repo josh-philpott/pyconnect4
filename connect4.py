@@ -6,11 +6,40 @@ import random
 global_computer = 2
 global_human = 1
 
+
 class ConnectFourHelper:
     """ConnectFourHelper contains helper functions for ConnectFourGame """
 
     def __init__(self):
         pass
+    
+    def maxValidScoreIndex(self, scores, valid):
+        max_n = -100000
+        best_moves = []
+
+        for i in range(0,len(scores)):
+            if valid[i]==True:
+                if scores[i] > max_n:
+                    best_moves = []
+                    max_n = scores[i]
+                    best_moves.append(i)
+                elif scores[i] == max_n:
+                    best_moves.append(i)
+        return random.choice(best_moves), max_n
+    
+    def minValidScoreIndex(self, scores, valid):
+            min_n = 100000
+            best_moves = []
+
+            for i in range(0,len(scores)):
+                if valid[i]==True:
+                    if scores[i] < min_n:
+                        best_moves = []
+                        min_n = scores[i]
+                        best_moves.append(i)
+                    elif scores[i] == min_n:
+                        best_moves.append(i)
+            return random.choice(best_moves), min_n
 
     def minimax(self, board, player, depth, maxDepth=100):
         """ recursive minimax algorithm returns best move for player
@@ -42,43 +71,34 @@ class ConnectFourHelper:
             opponent=1
         
         #Populate score array by doing each potential move
+        isValid=[]
+        
         for i in range(0,7):
             potential_board = copy.deepcopy(board)
             #if move is valid, run minimax on substates
             if self.isMoveValid(potential_board,i):
+                isValid.append(True)
                 self.dropPiece(i,player,potential_board)
+                #Keep it from not taking winning move
+                if depth==0 and self.checkWinner(potential_board)==player:
+                    return i, 100
                 scores.append(self.minimax(potential_board, opponent,depth+1, maxDepth)[1])
-                moves.append(i)
-                if max(scores)==scores[len(moves)-1]:
-                    max_score_index = len(moves)-1
-                if min(scores)==scores[len(moves)-1]:
-                    min_score_index = len(moves)-1
-            #if move is not valid, ensure it will not be selected
-            #by setting the score to number that won't be chosen
             else:
-                if player==global_computer:
-                    scores.append(-1000)
-                else:
-                    scores.append(1000)
+                isValid.append(False)
+                scores.append(0)
                 
         if depth==0:
             print scores
-        
+            
+        max_score_index, max_score = self.maxValidScoreIndex(scores, isValid)
+        min_score_index, min_score = self.minValidScoreIndex(scores, isValid)
+
         #get moves that are "equivalent" to best move
         #and return 
-        if player == global_computer:
-            best_score = scores[max_score_index]
-            best_moves = []
-            for i in range(len(scores)):
-                if scores[i]==best_score:
-                    best_moves.append(i)
-                    #target deeper play if bad outcome
-                    if(best_score<0):
-                        scores[i]=best_score + (maxDepth-depth)
-            
-            return random.choice(best_moves), scores[max_score_index]
+        if player == global_computer:            
+            return max_score_index, max_score
         else:
-            return moves[min_score_index], scores[min_score_index]
+            return min_score_index, min_score+depth
         
 
     def isMoveValid(self, board, col=None):
@@ -225,12 +245,12 @@ class ConnectFourGame:
         return self.board
 
     def getWinner(self):
-        """Returns winner if one exists. Otherwise, returns 0"""
+        """Returns winner if one 	exists. Otherwise, returns 0"""
         return self.helper.checkWinner(self.board)
 
     def makeComputerMove(self):
         """Simulates computer move using minimax algorithm"""
-        move, score = self.helper.minimax(self.board, global_computer, 0, maxDepth=2)
+        move, score = self.helper.minimax(self.board, global_computer, 0, maxDepth=5)
         
         print "Moving to",move,"with a score of",score
         self.dropPiece(move, global_computer)
@@ -285,7 +305,7 @@ class GUI:
     def drawGame(self, board, player_move, optional=0):
         self.clearScreen()
         self.drawTokens(player_move)
-        self.drawBoard(board) 
+        self.drawBoard(board)
         pygame.display.update()        
         
 
@@ -306,6 +326,15 @@ class GUI:
                     elif event.key==pygame.K_RETURN:
                         return player_move.index(player)
             self.drawGame(board,player_move,1)
+            
+    def drawWinner(self, winner, board):
+        self.clearScreen()
+        self.drawBoard(board)   
+        myfont = pygame.font.SysFont("Arial", 30)
+        label = myfont.render("Player " + str(winner) + " won!", 1, (0,0,0))
+        self.screen.blit(label,(370,10))
+        
+        
             
 
 
@@ -340,10 +369,9 @@ while True:
                 break
         gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
         if game.getWinner():
-                    break     
-if game.getWinner():          
-    print "Player",game.getWinner(),"won!"
-    input("Press enter to continue...")
+                    break  
+while True:
+    gui.drawWinner(game.getWinner(), game.getBoard())
     
     
 
