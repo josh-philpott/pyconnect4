@@ -54,11 +54,13 @@ class ConnectFourHelper:
         if there are multiple equivalent "best moves",
         will return a random element from a set of best moves
         """
+        
+        expanded_states = 0
         #if game is over or depth is maxed out, return current board score
         if self.isGameOver(board):
-            return 0, self.getScore(board,global_computer)
+            return 0, self.getScore(board,global_computer), 1
         if depth==maxDepth:
-            return 0, self.getScore(board,global_computer)
+            return 0, self.getScore(board,global_computer), 1
         
         scores=[]
         moves =[]
@@ -83,9 +85,10 @@ class ConnectFourHelper:
                     self.dropPiece(i,global_computer,potential_board)   
                     if self.checkWinner(potential_board)==global_computer:
                         print "Winning Move!"
-                        return i, 100
+                        return i, 100, i
         
         for i in range(0,7):
+            expanded_states = expanded_states + 1
             potential_board = copy.deepcopy(board)
             #if move is valid, run minimax on substates
             if self.isMoveValid(potential_board,i):
@@ -97,8 +100,9 @@ class ConnectFourHelper:
                     
                 #Keep it from not taking winning move
                 if depth==0 and self.checkWinner(potential_board)==player:
-                    return i, 100
-                score=(self.minimax(potential_board, opponent,depth+1, maxDepth)[1])
+                    return i, 100,1
+                temp,score,expanded=(self.minimax(potential_board, opponent,depth+1, maxDepth))
+                expanded_states = expanded_states + expanded
                 scores.append(score)
                 if(player==1):
                     if(score>alpha):
@@ -121,9 +125,9 @@ class ConnectFourHelper:
         #get moves that are "equivalent" to best move
         #and return 
         if player == 1:            
-            return max_score_index, max_score
+            return max_score_index, max_score, expanded_states
         else:
-            return min_score_index, min_score+depth
+            return min_score_index, min_score+depth, expanded_states
         
 
     def isMoveValid(self, board, col=None):
@@ -275,9 +279,10 @@ class ConnectFourGame:
 
     def makeComputerMove(self):
         """Simulates computer move using minimax algorithm"""
-        move, score = self.helper.minimax(self.board, 1, 0, maxDepth=4)
+        move, score, expanded = self.helper.minimax(self.board, 1, 0, maxDepth=4)
         
         print "Moving to",move,"with a score of",score
+        print "Expanded ",expanded," states"
         self.dropPiece(move, global_computer)
         
 class GUI:
