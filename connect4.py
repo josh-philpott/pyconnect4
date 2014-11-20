@@ -41,7 +41,7 @@ class ConnectFourHelper:
                         best_moves.append(i)
             return random.choice(best_moves), min_n
 
-    def minimax(self, board, player, depth, maxDepth=100):
+    def minimax(self, board, player, depth, maxDepth=100,alpha=-1000, beta=1000):
         """ recursive minimax algorithm returns best move for player
         from given board state. 
         
@@ -73,16 +73,41 @@ class ConnectFourHelper:
         #Populate score array by doing each potential move
         isValid=[]
         
+        #First see if there are any winning moves and take them
+        if player==1 and depth==0:
+            for i in range(0,7):
+                potential_board = copy.deepcopy(board)
+                #if move is valid, run minimax on substates
+                if self.isMoveValid(potential_board,i):
+                    isValid.append(True)
+                    self.dropPiece(i,global_computer,potential_board)   
+                    if self.checkWinner(potential_board)==global_computer:
+                        print "Winning Move!"
+                        return i, 100
+        
         for i in range(0,7):
             potential_board = copy.deepcopy(board)
             #if move is valid, run minimax on substates
             if self.isMoveValid(potential_board,i):
                 isValid.append(True)
-                self.dropPiece(i,player,potential_board)
+                if(player==1):
+                    self.dropPiece(i,global_computer,potential_board)
+                else:
+                    self.dropPiece(i,global_human,potential_board)
+                    
                 #Keep it from not taking winning move
                 if depth==0 and self.checkWinner(potential_board)==player:
                     return i, 100
-                scores.append(self.minimax(potential_board, opponent,depth+1, maxDepth)[1])
+                score=(self.minimax(potential_board, opponent,depth+1, maxDepth)[1])
+                scores.append(score)
+                if(player==1):
+                    if(score>alpha):
+                        alpha = score
+                if(player==2):
+                    if(score<beta):
+                        beta = score
+                if(alpha>=beta):
+                    break
             else:
                 isValid.append(False)
                 scores.append(0)
@@ -95,7 +120,7 @@ class ConnectFourHelper:
 
         #get moves that are "equivalent" to best move
         #and return 
-        if player == global_computer:            
+        if player == 1:            
             return max_score_index, max_score
         else:
             return min_score_index, min_score+depth
@@ -250,7 +275,7 @@ class ConnectFourGame:
 
     def makeComputerMove(self):
         """Simulates computer move using minimax algorithm"""
-        move, score = self.helper.minimax(self.board, global_computer, 0, maxDepth=5)
+        move, score = self.helper.minimax(self.board, 1, 0, maxDepth=4)
         
         print "Moving to",move,"with a score of",score
         self.dropPiece(move, global_computer)
@@ -331,8 +356,14 @@ class GUI:
         self.clearScreen()
         self.drawBoard(board)   
         myfont = pygame.font.SysFont("Arial", 30)
+
         label = myfont.render("Player " + str(winner) + " won!", 1, (0,0,0))
         self.screen.blit(label,(370,10))
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: 
+                sys.exit()        
         
         
             
@@ -370,6 +401,8 @@ while True:
         gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
         if game.getWinner():
                     break  
+    if game.helper.isMoveValid(game.getBoard())==False:
+        break
 while True:
     gui.drawWinner(game.getWinner(), game.getBoard())
     
