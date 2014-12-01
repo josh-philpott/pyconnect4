@@ -2,7 +2,7 @@ import pygame
 import sys
 import copy 
 import random
-
+import collections
 global_computer = 2
 global_human = 1
 
@@ -12,7 +12,7 @@ class ConnectFourHelper:
 
     def __init__(self):
         pass
-    
+
     def maxValidScoreIndex(self, scores, valid):
         max_n = -100000
         best_moves = []
@@ -26,121 +26,81 @@ class ConnectFourHelper:
                 elif scores[i] == max_n:
                     best_moves.append(i)
         return random.choice(best_moves), max_n
-    
+
     def minValidScoreIndex(self, scores, valid):
-            min_n = 100000
-            best_moves = []
+        min_n = 100000
+        best_moves = []
 
-            for i in range(0,len(scores)):
-                if valid[i]==True:
-                    if scores[i] < min_n:
-                        best_moves = []
-                        min_n = scores[i]
-                        best_moves.append(i)
-                    elif scores[i] == min_n:
-                        best_moves.append(i)
-            return random.choice(best_moves), min_n
+        for i in range(0,len(scores)):
+            if valid[i]==True:
+                if scores[i] < min_n:
+                    best_moves = []
+                    min_n = scores[i]
+                    best_moves.append(i)
+                elif scores[i] == min_n:
+                    best_moves.append(i)
+        return random.choice(best_moves), min_n
 
-    def minimax(self, board, player, depth, maxDepth=100,alpha=-1000, beta=1000):
-        """ recursive minimax algorithm returns best move for player
-        from given board state. 
-        
-        Keyword arguments:
-        board  -- 6x7 2D list representing board state
-        player -- player to determine optimal move for
-        depth  -- current search depth
-        maxDepth -- maxDepth to explore to
-        
-        if there are multiple equivalent "best moves",
-        will return a random element from a set of best moves
-        """
-        
-        expanded_states = 0
-        #if game is over or depth is maxed out, return current board score
-        if self.isGameOver(board):
-            return 0, self.getScore(board,global_computer), 1
-        if depth==maxDepth:
-            return 0, self.getScore(board,global_computer), 1
-        
-        scores=[]
-        moves =[]
-        min_score_index = 0
-        max_score_index = 0
-        
-        if player==1:
-            opponent=2
-        if player==2:
-            opponent=1
-        
-        #Populate score array by doing each potential move
-        isValid=[]
-        
-        #First see if there are any winning moves and take them
-        if player==1 and depth==0:
-            for i in range(0,7):
-                potential_board = copy.deepcopy(board)
-                #if move is valid, run minimax on substates
-                if self.isMoveValid(potential_board,i):
-                    isValid.append(True)
-                    self.dropPiece(i,global_computer,potential_board)   
-                    if self.checkWinner(potential_board)==global_computer:
-                        print "Winning Move!"
-                        return i, 100, i
-        
+    def minimax(self,board,player,depth=0,maxDepth=8, alpha=-1000, beta=1000):      
+        if self.isGameOver(board)==True or depth==maxDepth-1:
+            sc=self.getScore(board,global_computer,depth)
+            return -1, sc,1
+
+        scores = []
+        moves = []
+        expanded_states = 1
         for i in range(0,7):
-            expanded_states = expanded_states + 1
-            potential_board = copy.deepcopy(board)
-            #if move is valid, run minimax on substates
-            if self.isMoveValid(potential_board,i):
-                isValid.append(True)
+            if self.isMoveValid(board,i)==True:
+                potential_board = copy.deepcopy(board)
                 if(player==1):
                     self.dropPiece(i,global_computer,potential_board)
+                elif(player==2):
+                    self.dropPiece(i,global_human,potential_board)  
                 else:
-                    self.dropPiece(i,global_human,potential_board)
-                    
-                #Keep it from not taking winning move
-                if depth==0 and self.checkWinner(potential_board)==player:
-                    return i, 100,1
-                temp,score,expanded=(self.minimax(potential_board, opponent,depth+1, maxDepth))
-                expanded_states = expanded_states + expanded
+                    print "ERROR"
+                score,expanded = self.minimax(potential_board, (player%2)+1, depth+1, maxDepth, alpha, beta)[1:]
                 scores.append(score)
+                expanded_states = expanded_states+expanded
+                moves.append(i)
                 if(player==1):
                     if(score>alpha):
                         alpha = score
                 if(player==2):
                     if(score<beta):
                         beta = score
-                if(alpha>=beta):
-                    break
-            else:
-                isValid.append(False)
-                scores.append(0)
-                
+                if(alpha>=beta and depth!=0):
+                    pass
+                    #print "AB Break",alpha,beta
+                    #break                
+
         if depth==0:
             print scores
-            
-        max_score_index, max_score = self.maxValidScoreIndex(scores, isValid)
-        min_score_index, min_score = self.minValidScoreIndex(scores, isValid)
 
-        #get moves that are "equivalent" to best move
-        #and return 
-        if player == 1:            
-            return max_score_index, max_score, expanded_states
+        if player==1:
+            max_score_indicies = [i for i, x in enumerate(scores) if x == max(scores)]
+            max_score_index = random.choice(max_score_indicies)
+            max_score = scores[max_score_index]
+            move = moves[max_score_index]
+            return move,max_score,expanded_states
         else:
-            return min_score_index, min_score+depth, expanded_states
-        
+            min_score_indicies = [i for i, x in enumerate(scores) if x == min(scores)]
+            min_score_index = random.choice(min_score_indicies)
+            min_score = scores[min_score_index]
+            move = moves[min_score_index]     
+            return move, min_score,expanded_states
+
 
     def isMoveValid(self, board, col=None):
         """Determines if a move is valid
-        
+
         if col is set to integer,
         Returns True if col is valid move, False if invalid
-        
+
         if col is set to None,
         Returns True if board is not full, False if it is full
         """
-        
-        
+
+
         if col==None:
             for i in range(0,7):
                 if board[0][i]==0:
@@ -157,21 +117,28 @@ class ConnectFourHelper:
         else:
             return True
 
-    def getScore(self, board, player):
+    def getScore(self, board, player,depth):
         """Return game score based off of win state"""
         if player==1:
             computer = 2
         else:
             computer = 1
-    
-        
+
+        print self.checkOpenThree(board)
+
         if self.checkWinner(board)==player:
-            return 100
+            return 100-depth
         elif self.checkWinner(board)==computer:
-            return -100
+            return depth-100
         else:
-            return 0
-        
+            threes = self.checkOpenThree(board)
+            if(threes[0]>threes[1]):
+                return depth-75
+            elif(threes[1]>threes[0]):
+                return 75-depth
+            else:
+                return 0
+
 
     def checkWinner(self, board):
         """Returns winner. Check for all possible winning combinations"""
@@ -206,7 +173,75 @@ class ConnectFourHelper:
                 if board[row][start]!=0:
                     if (board[row][start] == board[row+1][start] ==
                         board[row+2][start] == board[row+3][start]):
-                        return board[row][start]		
+                        return board[row][start]	
+
+    def checkOpenThree(self, board):
+        """Check for the number of 3 in a rows"""
+        threes = [0,0]
+
+        #check horizontal
+        for row in range (0,6):
+            for start in range (0,4):
+                if board[row][start]!=0:
+                    #check for XXX_
+                    if (board[row][start] == board[row][start+1] ==
+                        board[row][start+2] and board[row][start+3] == 0):
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1
+
+                    #check for _XXX
+                    if (board[row][start] == 0 and board[row][start+1] ==
+                        board[row][start+2] == board[row][start+3]):       
+                        threes[board[row][start+1]-1] = threes[board[row][start+1]-1] + 1
+
+                    #check for X_XX
+                    if (board[row][start+1] == 0 and board[row][start] ==
+                        board[row][start+2] == board[row][start+3]):   
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1
+
+                    #check for XX_X   
+                    if (board[row][start+2] == 0 and board[row][start] ==
+                        board[row][start+1] == board[row][start+3]):   
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1  
+            #Check for winner diagn - bottom-right to top-left
+            for row in range (3,6):
+                for start in range (0,4):
+                    #check for _XXX
+                    if (board[row][start] == 0 and board[row-1][start-1] ==
+                        board[row-2][start-2] == board[row-3][start-3]):
+                        threes[board[row-1][start-1]-1] = threes[board[row-1][start-1]-1] + 1
+                    #check for X_XX
+                    if (board[row-1][start-1] == 0 and board[row][start] ==
+                        board[row-2][start-2] == board[row-3][start-3]):   
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1
+                    #check for XX_X
+                    if (board[row-2][start-2] == 0 and board[row][start] ==
+                        board[row-1][start-1] == board[row-3][start-3]):   
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1  
+                        #check for _XXX
+                    if (board[row-3][start-3] == 0 and board[row-1][start-1] ==
+                        board[row-2][start-2] == board[row][start]):
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1
+            #Check for 3 diagn - bottom-left to top-right
+            for row in range (0,3):
+                for start in range (0,4):
+                    #check for _XXX
+                    if (board[row][start] == 0 and board[row+1][start+1] ==
+                        board[row+2][start+2] == board[row+3][start+3]):
+                        threes[board[row+1][start+1]-1] = threes[board[row+1][start+1]-1] + 1
+                    #check for X_XX
+                    if (board[row+1][start+1] == 0 and board[row][start] ==
+                        board[row+2][start+2] == board[row+3][start+3]):   
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1
+                    #check for XX_X
+                    if (board[row+2][start+2] == 0 and board[row][start] ==
+                        board[row+1][start+1] == board[row+3][start+3]):   
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1  
+                        #check for _XXX
+                    if (board[row+3][start+3] == 0 and board[row+1][start+1] ==
+                        board[row+2][start+2] == board[row][start]):
+                        threes[board[row][start]-1] = threes[board[row][start]-1] + 1
+        return threes
+
 
     def getPossibleBoards(self, player, board):
         """Returns list of possible boards"""
@@ -279,12 +314,12 @@ class ConnectFourGame:
 
     def makeComputerMove(self):
         """Simulates computer move using minimax algorithm"""
-        move, score, expanded = self.helper.minimax(self.board, 1, 0, maxDepth=4)
-        
+        move, score, expanded_states = self.helper.minimax(self.board, 1, 0, maxDepth=4)
+
         print "Moving to",move,"with a score of",score
-        print "Expanded ",expanded," states"
+        print "Expanded",expanded_states,"states"
         self.dropPiece(move, global_computer)
-        
+
 class GUI:
     def __init__(self):
         pygame.init()
@@ -294,7 +329,7 @@ class GUI:
         self.margin_top  = 100
         self.margin_left = 100
         self.screen = pygame.display.set_mode(self.size)
-        
+
         pygame.display.set_caption("Connect Four")
 
         #Images
@@ -337,7 +372,7 @@ class GUI:
         self.drawTokens(player_move)
         self.drawBoard(board)
         pygame.display.update()        
-        
+
 
     def getPlayerMove(self,player,board):
         """Returns index of player move selection"""
@@ -356,7 +391,7 @@ class GUI:
                     elif event.key==pygame.K_RETURN:
                         return player_move.index(player)
             self.drawGame(board,player_move,1)
-            
+
     def drawWinner(self, winner, board):
         self.clearScreen()
         self.drawBoard(board)   
@@ -365,13 +400,13 @@ class GUI:
         label = myfont.render("Player " + str(winner) + " won!", 1, (0,0,0))
         self.screen.blit(label,(370,10))
         pygame.display.update()
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: 
                 sys.exit()        
-        
-        
-            
+
+
+
 
 
 
@@ -398,20 +433,20 @@ while True:
         game.makeComputerMove()
         gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
         if game.getWinner():
-                    break         
+            break         
         while True:
             move = gui.getPlayerMove(2, game.getBoard())
             if game.dropPiece(move,2)==1:
                 break
         gui.drawGame(game.getBoard(), [0,0,0,0,0,0,0], optional=0)
         if game.getWinner():
-                    break  
+            break  
     if game.helper.isMoveValid(game.getBoard())==False:
         break
 while True:
     gui.drawWinner(game.getWinner(), game.getBoard())
-    
-    
+
+
 
 
 
@@ -421,4 +456,3 @@ while True:
         #move = gui.getPlayerMove(2, game.getBoard())
         #if game.dropPiece(move,2)==1:
             #break
-
