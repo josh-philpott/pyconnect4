@@ -1,3 +1,5 @@
+#Last update - 12/1/14 @ 5:15PM
+
 import pygame
 import sys
 import copy 
@@ -12,34 +14,6 @@ class ConnectFourHelper:
 
     def __init__(self):
         pass
-
-    def maxValidScoreIndex(self, scores, valid):
-        max_n = -100000
-        best_moves = []
-
-        for i in range(0,len(scores)):
-            if valid[i]==True:
-                if scores[i] > max_n:
-                    best_moves = []
-                    max_n = scores[i]
-                    best_moves.append(i)
-                elif scores[i] == max_n:
-                    best_moves.append(i)
-        return random.choice(best_moves), max_n
-
-    def minValidScoreIndex(self, scores, valid):
-        min_n = 100000
-        best_moves = []
-
-        for i in range(0,len(scores)):
-            if valid[i]==True:
-                if scores[i] < min_n:
-                    best_moves = []
-                    min_n = scores[i]
-                    best_moves.append(i)
-                elif scores[i] == min_n:
-                    best_moves.append(i)
-        return random.choice(best_moves), min_n
 
     def minimax(self,board,player,depth=0,maxDepth=8, alpha=-1000, beta=1000):      
         if self.isGameOver(board)==True or depth==maxDepth-1:
@@ -110,6 +84,7 @@ class ConnectFourHelper:
             if board[0][col]==0:
                 return True
             return False   
+        
     def isGameOver(self, board):
         """Returns true if there are no possible moves OR there is a winner"""
         if(self.isMoveValid(board)==True and not self.checkWinner(board)):
@@ -241,21 +216,6 @@ class ConnectFourHelper:
                         board[row+2][start+2] == board[row][start]):
                         threes[board[row][start]-1] = threes[board[row][start]-1] + 1
         return threes
-
-
-    def getPossibleBoards(self, player, board):
-        """Returns list of possible boards"""
-        board_states = []
-
-        for col in range(0,7):
-            for row in range(5,-1,-1):
-                temp_board = []
-                if board[row][col]==0:
-                    temp_board = copy.deepcopy(board)
-                    temp_board[row][col]=player
-                    board_states.append(temp_board)
-                    break
-        return board_states
 
     def dropPiece(self, col, player, board):
         """ Make move on current board. """
@@ -445,14 +405,3 @@ while True:
         break
 while True:
     gui.drawWinner(game.getWinner(), game.getBoard())
-
-
-
-
-
-    #print game.getWinner()
-
-    #while True:
-        #move = gui.getPlayerMove(2, game.getBoard())
-        #if game.dropPiece(move,2)==1:
-            #break
