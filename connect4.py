@@ -5,8 +5,14 @@ import sys
 import copy 
 import random
 import collections
-global_computer = 2
-global_human = 1
+#Dont modify these#####
+global_computer = 2####
+global_human = 1   ####
+#######################
+
+#Change these to use minimax/alpha beta
+alphabeta_flag = True
+search_depth = 6
 
 
 class ConnectFourHelper:
@@ -15,7 +21,53 @@ class ConnectFourHelper:
     def __init__(self):
         pass
 
-    def minimax(self,board,player,depth=0,maxDepth=8, alpha=-1000, beta=1000):      
+    def minimax(self,board,player,depth=0,maxDepth=8):   
+        #if game is over or max depth is reached, return no move / score
+        if self.isGameOver(board)==True or depth==maxDepth-1:
+            sc=self.getScore(board,global_computer,depth)
+            return 0, sc,1
+
+        scores = []
+        moves = []
+        expanded_states = 1
+        
+        #For each possible move
+        for i in range(0,7):
+            #Evaluate if the move is valid
+            if self.isMoveValid(board,i)==True:
+                #simulate dropping piece on board
+                potential_board = copy.deepcopy(board)
+                if(player==1):
+                    self.dropPiece(i,global_computer,potential_board)
+                else:
+                    self.dropPiece(i,global_human,potential_board) 
+                #Run minimax on subgame. Increase depth by 1
+                score,expanded = self.minimax(potential_board, (player%2)+1, depth+1, maxDepth)[1:]
+                scores.append(score)
+                moves.append(i)  
+                #keep track of total expanded states
+                expanded_states = expanded_states+expanded
+                
+        #Print scores for presentation purposes
+        if depth==0:
+            print scores
+            
+        #Maximize for player 1
+        if player==1:
+            max_score_indicies = [i for i, x in enumerate(scores) if x == max(scores)]
+            max_score_index = random.choice(max_score_indicies)
+            max_score = scores[max_score_index]
+            move = moves[max_score_index]
+            return move,max_score,expanded_states
+        #Minimize for player 2
+        else:
+            min_score_indicies = [i for i, x in enumerate(scores) if x == min(scores)]
+            min_score_index = random.choice(min_score_indicies)
+            min_score = scores[min_score_index]
+            move = moves[min_score_index]     
+            return move, min_score,expanded_states
+        
+    def alphabeta(self,board,player,depth=0,maxDepth=8, alpha=-1000, beta=1000):      
         if self.isGameOver(board)==True or depth==maxDepth-1:
             sc=self.getScore(board,global_computer,depth)
             return -1, sc,1
@@ -32,7 +84,7 @@ class ConnectFourHelper:
                     self.dropPiece(i,global_human,potential_board)  
                 else:
                     print "ERROR"
-                score,expanded = self.minimax(potential_board, (player%2)+1, depth+1, maxDepth, alpha, beta)[1:]
+                score,expanded = self.alphabeta(potential_board, (player%2)+1, depth+1, maxDepth, alpha, beta)[1:]
                 scores.append(score)
                 expanded_states = expanded_states+expanded
                 moves.append(i)
@@ -43,25 +95,24 @@ class ConnectFourHelper:
                     if(score<beta):
                         beta = score
                 if(alpha>=beta and depth!=0):
-                    pass
-                    #print "AB Break",alpha,beta
-                    #break                
+                    break                
 
         if depth==0:
             print scores
 
         if player==1:
-            max_score_indicies = [i for i, x in enumerate(scores) if x == max(scores)]
-            max_score_index = random.choice(max_score_indicies)
+            #return leftmost max score
+            max_score_index = scores.index(max(scores))
             max_score = scores[max_score_index]
             move = moves[max_score_index]
             return move,max_score,expanded_states
         else:
-            min_score_indicies = [i for i, x in enumerate(scores) if x == min(scores)]
-            min_score_index = random.choice(min_score_indicies)
+            #return leftmost min score
+            min_score_index = scores.index(min(scores))
             min_score = scores[min_score_index]
             move = moves[min_score_index]     
             return move, min_score,expanded_states
+
 
 
     def isMoveValid(self, board, col=None):
@@ -98,8 +149,6 @@ class ConnectFourHelper:
             computer = 2
         else:
             computer = 1
-
-        print self.checkOpenThree(board)
 
         if self.checkWinner(board)==player:
             return 100-depth
@@ -274,8 +323,10 @@ class ConnectFourGame:
 
     def makeComputerMove(self):
         """Simulates computer move using minimax algorithm"""
-        move, score, expanded_states = self.helper.minimax(self.board, 1, 0, maxDepth=4)
-
+        if alphabeta_flag==True:
+            move, score, expanded_states = self.helper.alphabeta(self.board, 1, 0, maxDepth=search_depth)
+        else:
+            move, score, expanded_states = self.helper.minimax(self.board,1,0,maxDepth=search_depth)
         print "Moving to",move,"with a score of",score
         print "Expanded",expanded_states,"states"
         self.dropPiece(move, global_computer)
